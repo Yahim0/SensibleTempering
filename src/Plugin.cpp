@@ -55,22 +55,6 @@ using namespace SensibleTempering;
 
 class TemperHooks {
 
-    struct MySmithingItemEntry { // The struct in CommonLib is wrong, this is a replacement until they accept my PR
-        // members
-        RE::InventoryEntryData* item;                     // 00
-        RE::BGSConstructibleObject* unk08;                // 08
-        RE::BGSConstructibleObject* constructibleObject;  // 10
-        float unk18;                                      // 18 - Health of item?
-        float unk1C;                                      // 1C - kSmithing actor value?
-        float unk20;                                      // 20
-        float unk24;                                      // 24
-        uint8_t unk28;                                    // 28
-        uint8_t unk29;                                    // 29
-        uint8_t unk2A;                                    // 2A
-        uint8_t pad2B;                                    // 2B
-        uint32_t pad2C;                                   // 2C
-    };
-
     static float getArBonus(float temperTier, RE::TESObjectARMO* a) {
         float old = oldGetArBonus(temperTier, a);
         if (!a || Config::additiveFallback && a->GetArmorRating() * (temperTier - 1) < old)
@@ -79,84 +63,21 @@ class TemperHooks {
     }
 
     static float getDmgBonus(float temperTier) { //original getDmgBonus only takes one argument, and doesn't receive the weapon ptr, so I had to take the long way...
-        REL::Relocation<decltype(getDmgBonus)> oldGetDmgBonus(REL::ID(26498));
+        REL::Relocation<decltype(getDmgBonus)> oldGetDmgBonus(REL::ID(RELOCATION_ID(25915, 26498)));
         return oldGetDmgBonus(temperTier);
     }
 
-    static float getTemperTier(RE::InventoryEntryData *arg) { // and
-        REL::Relocation<decltype(getTemperTier)> oldTemperTier(REL::ID(15990));
-        return oldTemperTier(arg);
-    }
-
-    static float getPotentialTier(float arg) { // hook
-        REL::Relocation<decltype(getPotentialTier)> oldPotentialtemper(REL::ID(26497));
-        return oldPotentialtemper(arg);
-    }
-
-    static void functionA(uintptr_t array, uintptr_t innerFuncA, uint32_t i, uint32_t i2) { // all
-        REL::Relocation<decltype(functionA)> oldFunctionA(REL::ID(51215).address());
-        return oldFunctionA(array, innerFuncA, i, i2);
-    }
-
-    static int innerFunctionA(uintptr_t q1, uintptr_t q2) { // of
-        REL::Relocation<decltype(innerFunctionA)> oldInnerFunctionA(REL::ID(51444).address());
-        return oldInnerFunctionA(q1, q2);
-    }
-
-    static float functionB(RE::CraftingSubMenus::SmithingMenu* menu, RE::BSTArray<MySmithingItemEntry> *array) { //these
-        REL::Relocation<decltype(functionB)> oldFunctionB(REL::ID(51225).address());
-        return oldFunctionB(menu, array);
-    }
-
-    static float functionC(RE::CraftingSubMenus::SmithingMenu* menu, RE::BSTArray<MySmithingItemEntry>* array, int i) {
-        REL::Relocation<decltype(functionC)> oldFunctionC(REL::ID(51233).address());
-        return oldFunctionC(menu, array, i);
-    }
-
-    static uint64_t innerFunction(RE::CraftingSubMenus::SmithingMenu *arg) {
-        REL::Relocation<decltype(innerFunction)> oldInnerFunction(REL::ID(51460).address());
-        return oldInnerFunction(arg);
-    }
-
     static float mysteryFunction(RE::ActorValueOwner *qwrd, uint32_t arg2) {
-        REL::Relocation<decltype(mysteryFunction)> oldMysteryFunction(REL::ID(38462).address());
+        REL::Relocation<decltype(mysteryFunction)> oldMysteryFunction(REL::ID(RELOCATION_ID(37517, 38462)));
         return oldMysteryFunction(qwrd, arg2);
     }
 
     static float getClampedActorValue(RE::ActorValueOwner* actorValueOwner, stl::enumeration<RE::ActorValue, std::uint32_t> q2) {
-        REL::Relocation<decltype(getClampedActorValue)> oldGetClampedActorValue(REL::ID(27284).address());
+        REL::Relocation<decltype(getClampedActorValue)> oldGetClampedActorValue(REL::ID(RELOCATION_ID(26616, 27284)));
         return oldGetClampedActorValue(actorValueOwner, q2);
     }
 
-    static uint64_t temperUIFunction(RE::CraftingSubMenus::SmithingMenu *menu) {
-        uint64_t old = oldTemperUIFunction(menu);
-        if (menu->smithingType == RE::FormType::Weapon) {
-            auto itemArray = reinterpret_cast<RE::BSTArray<MySmithingItemEntry>*>(&menu->unk100);
-            for (MySmithingItemEntry &i : *itemArray) {
-                //logger::info("unk18 {}; unk1C {}; unk20 {}; unk24 {}; unk28 {}; unk29 {}; unk2A {}; pad2B {}; pad2C {};", i.unk18, i.unk1C, i.unk20, i.unk24, i.unk28, i.unk29, i.unk2A, i.pad2B, i.pad2C);
-                float addDmg = getDmgBonus(getTemperTier(i.item));
-                float multDmg = (getTemperTier(i.item) - 1.0f) * i.item->object->As<RE::TESObjectWEAP>()->GetAttackDamage() * Config::percentPerTierWeapon * 0.1f;
-                float addPotentialDmg = getDmgBonus(getPotentialTier(RE::PlayerCharacter::GetSingleton()->AsActorValueOwner()->GetActorValue(RE::ActorValue::kSmithing)));
-                float multPotentialDmg = std::roundf(getPotentialTier(RE::PlayerCharacter::GetSingleton()->AsActorValueOwner()->GetActorValue(RE::ActorValue::kSmithing))* 10) / 10 * i.item->object->As<RE::TESObjectWEAP>()->GetAttackDamage() * Config::percentPerTierWeapon * 0.1f;
-                //logger::info("damage {}; potential {}; coeffiecint {}; result {}", i.item->object->As<RE::TESObjectWEAP>()->GetAttackDamage(),
-                //    getPotentialTier((RE::PlayerCharacter::GetSingleton()->AsActorValueOwner()->GetActorValue(RE::ActorValue::kSmithing))),
-                //    (std::roundf((getPotentialTier(RE::PlayerCharacter::GetSingleton()->AsActorValueOwner()->GetActorValue(RE::ActorValue::kSmithing)) - 1.0f) * 10.0f) / 10),
-                //    newPotentialDmg);
-                i.unk20 = Config::additiveFallback && addDmg > multDmg ? addDmg : multDmg;
-                i.unk24 = Config::additiveFallback && addPotentialDmg > multPotentialDmg ? addPotentialDmg : multPotentialDmg;
-                //logger::info("unk18 {}; unk1C {}; unk20 {};  unk24 {}; unk28 {}; unk29 {}; unk2A {}; pad2B {}; pad2C {};", i.unk18, i.unk1C, i.unk20, i.unk24, i.unk28, i.unk29, i.unk2A, i.pad2B, i.pad2C);
-            }
-            if (itemArray->size() > 1) {
-                functionA(reinterpret_cast<std::uintptr_t>(itemArray), reinterpret_cast<std::uintptr_t>(&innerFunctionA), 0, itemArray->size() - 1);
-            }
-            functionB(menu, itemArray);
-            functionC(menu, itemArray, 1);
-            return innerFunction(menu);
-        }
-        return old;
-    }
-
-    static float getDamage(RE::ActorValueOwner* actorValueOwner, RE::TESObjectWEAP* weapon, RE::TESAmmo *munition, float temperTier, float idkFloat, char idkChar) {
+    static float getDamage(RE::ActorValueOwner* actorValueOwner, RE::TESObjectWEAP* weapon, RE::TESAmmo *munition, float temperTier, float idkFloat, char idkChar) { // And substitute this long function
         float oldReturn = oldGetDamage(actorValueOwner, weapon, munition, temperTier, idkFloat, idkChar);
         if (!actorValueOwner || !weapon || weapon->GetWeaponType() == 0 || weapon->GetWeaponType() == 8)
             return oldReturn;
@@ -199,7 +120,7 @@ class TemperHooks {
             }
         }
         float time = 1.0f;
-        if (weapon /*&& weapon->data->flags.underlying() != 2*/ && weapon->GetWeaponType() < 7 && RE::VATS::GetSingleton()->VATSMode != RE::VATS::VATS_MODE::kNone) { // dont know why all this, also comments cond is vestigial from fo3
+        if (weapon /*&& weapon->data->flags.underlying() != 2*/ && weapon->GetWeaponType() < 7 && RE::VATS::GetSingleton()->VATSMode != RE::VATS::VATS_MODE::kNone) { // dont know why all this, also commented condition is vestigial from fo3
             time = RE::GetSecondsSinceLastFrame();
         }
         float float2 = damageSkill * idkFloat;
@@ -209,35 +130,28 @@ class TemperHooks {
     }
 
     static inline REL::Relocation<decltype(getArBonus)> oldGetArBonus;
-    static inline REL::Relocation<decltype(temperUIFunction)> oldTemperUIFunction;
     static inline REL::Relocation<decltype(getDamage)> oldGetDamage;
 
 public:
     static void hook() {
-        oldGetArBonus = SKSE::GetTrampoline().write_call<5>(REL::ID(51360).address() + 0x471, getArBonus);
-        SKSE::GetTrampoline().write_call<5>(REL::ID(51360).address() + 0x45d, getArBonus);
-        SKSE::GetTrampoline().write_call<5>(REL::ID(16017).address() + 0x2f, getArBonus);
+        oldGetArBonus = SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(50455, 51360)).address() + 0x471, getArBonus);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(50455, 51360)).address() + 0x45d, getArBonus);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(15779, 16017)).address() + 0x2f, getArBonus);
 
-        oldTemperUIFunction = SKSE::GetTrampoline().write_call<5>(REL::ID(51370).address() + 0x1f9, temperUIFunction);
-        SKSE::GetTrampoline().write_call<5>(REL::ID(51386).address() + 0x196, temperUIFunction);
-
-        oldGetDamage = SKSE::GetTrampoline().write_call<5>(REL::ID(26409).address() + 0x19, getDamage);
-        SKSE::GetTrampoline().write_call<5>(REL::ID(26411).address() + 0x2a, getDamage);
-        SKSE::GetTrampoline().write_call<5>(REL::ID(40291).address() + 0x37, getDamage);
-        SKSE::GetTrampoline().write_call<5>(REL::ID(44100).address() + 0x2f8, getDamage);
+        oldGetDamage = SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(25846, 26409)).address() + 0x19, getDamage);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(25848, 26411)).address() + 0x2a, getDamage);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(39215, 40291)).address() + 0x37, getDamage);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(42920, 44100)).address() + 0x2f8, getDamage);
     }
-    static void hookSE() { //FIXME correct addresses
-        oldGetArBonus = SKSE::GetTrampoline().write_call<5>(REL::ID(50455).address() + 0x471, getArBonus);
-        SKSE::GetTrampoline().write_call<5>(REL::ID(50455).address() + 0x45d, getArBonus);
-        SKSE::GetTrampoline().write_call<5>(REL::ID(15779).address() + 0x2f, getArBonus);
+    static void hookSE() {
+        oldGetArBonus = SKSE::GetTrampoline().write_call<5>(REL::ID(50531).address() + 0x60, getArBonus);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(50531).address() + 0x72, getArBonus);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(15779, 16017)).address() + 0x2f, getArBonus);
 
-        oldTemperUIFunction = SKSE::GetTrampoline().write_call<5>(REL::ID(51370).address() + 0x1f9, temperUIFunction);
-        SKSE::GetTrampoline().write_call<5>(REL::ID(50494).address() + 0x196, temperUIFunction);
-
-        oldGetDamage = SKSE::GetTrampoline().write_call<5>(REL::ID(25846).address() + 0x19, getDamage);
-        SKSE::GetTrampoline().write_call<5>(REL::ID(25848).address() + 0x2a, getDamage);
-        SKSE::GetTrampoline().write_call<5>(REL::ID(39215).address() + 0x37, getDamage);
-        SKSE::GetTrampoline().write_call<5>(REL::ID(42920).address() + 0x2f8, getDamage);
+        oldGetDamage = SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(25846, 26409)).address() + 0x19, getDamage);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(25848, 26411)).address() + 0x2a, getDamage);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(39215).address() + 0x2f, getDamage);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(42920).address() + 0x2f4, getDamage);
     }
 };
 
@@ -249,10 +163,11 @@ extern "C" DLLEXPORT bool SKSEPlugin_Load(const LoadInterface* skse) {
     SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* message) {
         if (message->type == SKSE::MessagingInterface::kDataLoaded) {
             Config::LoadConfig();
+            Config::LoadConfig();
             if (REL::Module::IsSE()) {
                 TemperHooks::hookSE();
             }
-            else if (REL::Module::IsAE()){
+            else if (REL::Module::IsAE()) {
                 TemperHooks::hook();
             }
         }
