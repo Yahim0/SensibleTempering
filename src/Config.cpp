@@ -4,7 +4,7 @@
 namespace SensibleTempering {
     void Config::LoadConfig() noexcept
     {
-        logger::info("Loading settings");
+        logger::info("Loading config");
 
         CSimpleIniA ini;
         ini.SetUnicode();
@@ -13,9 +13,20 @@ namespace SensibleTempering {
             return;
         }
 
-        additiveFallback = ini.GetBoolValue("General", "regenCoefficient");
-        percentPerTierArmor = static_cast<float>(ini.GetDoubleValue("General", "percentPerTierArmor"));
-        percentPerTierWeapon = static_cast<float>(ini.GetDoubleValue("General", "percentPerTierWeapon"));
+        vanillaPlusMode = ini.GetBoolValue("General", "vanillaPlusMode");
+
+        heavyArmorBonus = ini.GetLongValue("VanillaPlusMode", "heavyArmorBonus");
+        heavyArmorChestBonus = ini.GetLongValue("VanillaPlusMode", "heavyArmorChestBonus");
+        heavyArmorBonus = ini.GetLongValue("VanillaPlusMode", "lightArmorBonus");
+        heavyArmorChestBonus = ini.GetLongValue("VanillaPlusMode", "lightArmorChestBonus");
+        oneHandedBonus = ini.GetLongValue("VanillaPlusMode", "oneHandedBonus");
+        twoHandedBonus = ini.GetLongValue("VanillaPlusMode", "twoHandedBonus");
+        bowBonus = ini.GetLongValue("VanillaPlusMode", "bowBonus");
+        crossbowBonus = ini.GetLongValue("VanillaPlusMode", "crossbowBonus");
+
+        vanillaPlusFallback = ini.GetBoolValue("PercentMode", "vanillaPlusFallback");
+        percentPerTierArmor = (float) ini.GetDoubleValue("PercentMode", "percentPerTierArmor");
+        percentPerTierWeapon = (float) ini.GetDoubleValue("PercentMode", "percentPerTierWeapon");
 
         logger::info("Loaded config");
         logger::info("");

@@ -55,14 +55,31 @@ using namespace SensibleTempering;
 
 class TemperHooks {
 
-    static float getArBonus(float temperTier, RE::TESObjectARMO* a) {
-        float old = oldGetArBonus(temperTier, a);
-        if (!a || Config::additiveFallback && a->GetArmorRating() * (temperTier - 1) < old)
-            return old;
-        return a->GetArmorRating() * (temperTier - 1) * Config::percentPerTierArmor * 0.1f;
+    static float getArBonus(float temperTier, RE::TESObjectARMO* armor) {
+        if (!armor)
+            return oldGetArBonus(temperTier, armor);
+        if (!Config::vanillaPlusMode && !Config::vanillaPlusFallback)
+            return armor->GetArmorRating() * (temperTier - 1) * Config::percentPerTierArmor / 10;
+        float arBonus = 0;
+        if (armor->IsHeavyArmor()) {
+            arBonus = Config::heavyArmorBonus * (temperTier - 1) * 10;
+            if (armor->HasKeywordID(442604)) { // if is chestplate
+                arBonus = Config::heavyArmorChestBonus * (temperTier - 1) * 10;
+            }
+        }
+        else if (armor->IsLightArmor()) {
+            arBonus = Config::lightArmorBonus * (temperTier - 1) * 10;
+            if (armor->HasKeywordID(442604)) { // if is chestplate
+                arBonus = Config::lightArmorChestBonus * (temperTier - 1) * 10;
+            }
+        }
+        if (Config::vanillaPlusFallback) {
+            arBonus = std::max(arBonus, armor->GetArmorRating() * (temperTier - 1) * Config::percentPerTierArmor / 10);
+        }
+        return arBonus;
     }
 
-    static float getDmgBonus(float temperTier) { //original getDmgBonus only takes one argument, and doesn't receive the weapon ptr, so I had to take the long way...
+    static float getDmgBonus(float temperTier) { // original getDmgBonus only takes one argument, and doesn't receive the weapon ptr, so I had to take the long way...
         REL::Relocation<decltype(getDmgBonus)> oldGetDmgBonus(REL::ID(RELOCATION_ID(25915, 26498)));
         return oldGetDmgBonus(temperTier);
     }
@@ -93,11 +110,27 @@ class TemperHooks {
         stl::enumeration<RE::ActorValue, std::uint32_t> weaponSkill = weapon->weaponData.skill;
         float float3 = 0;
 
-        float additiveDamageBonus = getDmgBonus(temperTier); // part that matters
-        float temperDamageBonus = weapon->GetAttackDamage() * (temperTier - 1) * Config::percentPerTierWeapon * 0.1f;
-        if (Config::additiveFallback && temperDamageBonus < additiveDamageBonus) {
-            temperDamageBonus = additiveDamageBonus;
+        float temperDamageBonus = 0; // part that matters
+        if (Config::vanillaPlusMode || Config::vanillaPlusFallback) {
+            if (weapon->GetWeaponType() >= 1 && weapon->GetWeaponType() <= 4) {
+                temperDamageBonus = getDmgBonus(temperTier) * Config::oneHandedBonus;
+            }
+            else if (weapon->GetWeaponType() == 5 || weapon->GetWeaponType() == 6) {
+                temperDamageBonus = getDmgBonus(temperTier) * Config::twoHandedBonus;
+            }
+            else if (weapon->GetWeaponType() == 7) {
+                temperDamageBonus = getDmgBonus(temperTier) * Config::bowBonus;
+            }
+            else if (weapon->GetWeaponType() == 9) {
+                temperDamageBonus = getDmgBonus(temperTier) * Config::crossbowBonus;
+            }
+            if (Config::vanillaPlusFallback) {
+                temperDamageBonus = std::max(weapon->GetAttackDamage() * (temperTier - 1) * Config::percentPerTierWeapon / 10 , temperDamageBonus);
+            }
         }
+        else {
+            temperDamageBonus = weapon->GetAttackDamage() * (temperTier - 1) * Config::percentPerTierWeapon / 10;
+        } // part that matters
 
         if (weapon->GetWeaponType() >= 1 and weapon->GetWeaponType() <= 6) { //if is mellee
             float3 = mysteryFunction(actorValueOwner, 34); // dont know, dont care, value is correct
@@ -162,7 +195,6 @@ extern "C" DLLEXPORT bool SKSEPlugin_Load(const LoadInterface* skse) {
     SKSE::AllocTrampoline(1 << 10);
     SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* message) {
         if (message->type == SKSE::MessagingInterface::kDataLoaded) {
-            Config::LoadConfig();
             Config::LoadConfig();
             if (REL::Module::IsSE()) {
                 TemperHooks::hookSE();

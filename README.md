@@ -1,4 +1,4 @@
-this mod is powered by Epinter's
+### **This mod is powered by Epinter's**
 
 # ***Template Project for SKSE - CommonLibSSE-NG***
 
