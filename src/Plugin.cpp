@@ -166,7 +166,7 @@ class TemperHooks {
     static inline REL::Relocation<decltype(getDamage)> oldGetDamage;
 
 public:
-    static void hook() {
+    static void hookAE() {
         oldGetArBonus = SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(50455, 51360)).address() + 0x471, getArBonus);
         SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(50455, 51360)).address() + 0x45d, getArBonus);
         SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(15779, 16017)).address() + 0x2f, getArBonus);
@@ -186,6 +186,16 @@ public:
         SKSE::GetTrampoline().write_call<5>(REL::ID(39215).address() + 0x2f, getDamage);
         SKSE::GetTrampoline().write_call<5>(REL::ID(42920).address() + 0x2f4, getDamage);
     }
+    static void hookVR() {
+        oldGetArBonus = SKSE::GetTrampoline().write_call<5>(REL::ID(50530).address() + 0x187, getArBonus);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(50530).address() + 0x196, getArBonus);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(15779, 16017)).address() + 0x2f, getArBonus);
+
+        oldGetDamage = SKSE::GetTrampoline().write_call<5>(REL::ID(25851).address() - 0x537, getDamage);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(25851).address() - 0x2B6, getDamage); 
+        SKSE::GetTrampoline().write_call<5>(REL::ID(39217).address() - 0x81, getDamage);
+        SKSE::GetTrampoline().write_call<5>(REL::ID(42928).address() - 0x52c, getDamage);
+    }
 };
 
 extern "C" DLLEXPORT bool SKSEPlugin_Load(const LoadInterface* skse) {
@@ -200,7 +210,10 @@ extern "C" DLLEXPORT bool SKSEPlugin_Load(const LoadInterface* skse) {
                 TemperHooks::hookSE();
             }
             else if (REL::Module::IsAE()) {
-                TemperHooks::hook();
+                TemperHooks::hookAE();
+            }
+            else if (REL::Module::IsVR()) {
+                TemperHooks::hookVR();
             }
         }
         });
