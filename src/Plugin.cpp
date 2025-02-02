@@ -62,15 +62,15 @@ class TemperHooks {
             return armor->GetArmorRating() * (temperTier - 1) * Config::percentPerTierArmor / 10;
         float arBonus = 0;
         if (armor->IsHeavyArmor()) {
-            arBonus = Config::heavyArmorBonus * (temperTier - 1) * 10;
+            arBonus = oldGetArBonus(temperTier, armor) * Config::heavyArmorBonus;
             if (armor->HasKeywordID(442604)) { // if is chestplate
-                arBonus = Config::heavyArmorChestBonus * (temperTier - 1) * 10;
+                arBonus = oldGetArBonus(temperTier, armor) / 2 * Config::heavyArmorChestBonus;
             }
         }
         else if (armor->IsLightArmor()) {
-            arBonus = Config::lightArmorBonus * (temperTier - 1) * 10;
+            arBonus = oldGetArBonus(temperTier, armor) * Config::lightArmorBonus;
             if (armor->HasKeywordID(442604)) { // if is chestplate
-                arBonus = Config::lightArmorChestBonus * (temperTier - 1) * 10;
+                arBonus = oldGetArBonus(temperTier, armor) / 2 * Config::lightArmorChestBonus;
             }
         }
         if (Config::vanillaPlusFallback) {
