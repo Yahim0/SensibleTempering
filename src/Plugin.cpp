@@ -84,18 +84,13 @@ class TemperHooks {
         return oldGetDmgBonus(temperTier);
     }
 
-    static float mysteryFunction(RE::ActorValueOwner *qwrd, uint32_t arg2) {
-        REL::Relocation<decltype(mysteryFunction)> oldMysteryFunction(REL::ID(RELOCATION_ID(37517, 38462)));
-        return oldMysteryFunction(qwrd, arg2);
-    }
-
     static float getClampedActorValue(RE::ActorValueOwner* actorValueOwner, stl::enumeration<RE::ActorValue, std::uint32_t> q2) {
         REL::Relocation<decltype(getClampedActorValue)> oldGetClampedActorValue(REL::ID(RELOCATION_ID(26616, 27284)));
         return oldGetClampedActorValue(actorValueOwner, q2);
     }
 
-    static float getDamage(RE::ActorValueOwner* actorValueOwner, RE::TESObjectWEAP* weapon, RE::TESAmmo *munition, float temperTier, float idkFloat, char idkChar) { // And substitute this long function
-        float oldReturn = oldGetDamage(actorValueOwner, weapon, munition, temperTier, idkFloat, idkChar);
+    static float getDamage(RE::ActorValueOwner* actorValueOwner, RE::TESObjectWEAP* weapon, RE::TESAmmo *munition, float temperTier, float skillMultiplier, char idkChar) { // And substitute this long function
+        float oldReturn = oldGetDamage(actorValueOwner, weapon, munition, temperTier, skillMultiplier, idkChar);
         if (!actorValueOwner || !weapon || weapon->GetWeaponType() == 0 || weapon->GetWeaponType() == 8)
             return oldReturn;
         RE::TESAmmo *ammoType = munition;
@@ -107,8 +102,7 @@ class TemperHooks {
             ammoDamage = ammoType->data.damage;
         }
         float damage = (ammoDamage + weapon->GetAttackDamage()) * RE::GameSettingCollection::GetSingleton()->GetSetting("fDamageWeaponMult")->GetFloat();
-        stl::enumeration<RE::ActorValue, std::uint32_t> weaponSkill = weapon->weaponData.skill;
-        float float3 = 0;
+        stl::enumeration<RE::ActorValue, std::uint8_t> weaponSkill = weapon->weaponData.skill;
 
         float temperDamageBonus = 0; // part that matters
         if (Config::vanillaPlusMode || Config::vanillaPlusFallback) {
@@ -132,12 +126,13 @@ class TemperHooks {
             temperDamageBonus = weapon->GetAttackDamage() * (temperTier - 1) * Config::percentPerTierWeapon / 10;
         } // part that matters
 
+        float meleeDamage = 0;
         if (weapon->GetWeaponType() >= 1 and weapon->GetWeaponType() <= 6) { //if is mellee
-            float3 = mysteryFunction(actorValueOwner, 34); // dont know, dont care, value is correct
+            meleeDamage = actorValueOwner->GetActorValue(RE::ActorValue::kMeleeDamage);
         }
         float clampedActorValue;
         float damageSkill;
-        if (weaponSkill.underlying() - 6 > 17) /*???*/ {
+        if (weaponSkill.underlying() > 23) /*if is not valid skill*/ {
             clampedActorValue = 100;
             damageSkill = 1.0f;
         }
@@ -156,10 +151,10 @@ class TemperHooks {
         if (weapon /*&& weapon->data->flags.underlying() != 2*/ && weapon->GetWeaponType() < 7 && RE::VATS::GetSingleton()->VATSMode != RE::VATS::VATS_MODE::kNone) { // dont know why all this, also commented condition is vestigial from fo3
             time = RE::GetSecondsSinceLastFrame();
         }
-        float float2 = damageSkill * idkFloat;
-        float returnValue = (((damage + temperDamageBonus) * float2) + float3) * time;
-        float check = (damage * float2 + float3) * time;
-        return temperDamageBonus != 0 && std::roundf(returnValue) == std::roundf(check) ? std::roundf(returnValue) + 0.55f : returnValue;
+        float skillDamage = damageSkill * skillMultiplier;
+        float returnValue = (((damage + temperDamageBonus) * skillDamage) + meleeDamage) * time;
+        float noTemperCheck = (damage * skillDamage + meleeDamage) * time;
+        return temperDamageBonus != 0 && std::roundf(returnValue) == std::roundf(noTemperCheck) ? std::roundf(returnValue) + 0.55f : returnValue;
     }
 
     static inline REL::Relocation<decltype(getArBonus)> oldGetArBonus;
