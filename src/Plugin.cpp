@@ -171,7 +171,7 @@ public:
         SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(39215, 40291)).address() + 0x37, getDamage);
         SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(42920, 44100)).address() + 0x2f8, getDamage);
     }
-    static void hookSE() {
+    static void hookSEandVR() {
         oldGetArBonus = SKSE::GetTrampoline().write_call<5>(REL::ID(50531).address() + 0x60, getArBonus);
         SKSE::GetTrampoline().write_call<5>(REL::ID(50531).address() + 0x72, getArBonus);
         SKSE::GetTrampoline().write_call<5>(REL::ID(RELOCATION_ID(15779, 16017)).address() + 0x2f, getArBonus);
@@ -201,14 +201,11 @@ extern "C" DLLEXPORT bool SKSEPlugin_Load(const LoadInterface* skse) {
     SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* message) {
         if (message->type == SKSE::MessagingInterface::kDataLoaded) {
             Config::LoadConfig();
-            if (REL::Module::IsSE()) {
-                TemperHooks::hookSE();
+            if (REL::Module::IsSE() || REL::Module::IsVR()) {
+                TemperHooks::hookSEandVR();
             }
             else if (REL::Module::IsAE()) {
                 TemperHooks::hookAE();
-            }
-            else if (REL::Module::IsVR()) {
-                TemperHooks::hookVR();
             }
         }
         });
