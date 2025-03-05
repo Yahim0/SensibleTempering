@@ -17,8 +17,8 @@ namespace SensibleTempering {
 
         heavyArmorBonus = ini.GetLongValue("VanillaPlusMode", "heavyArmorBonus");
         heavyArmorChestBonus = ini.GetLongValue("VanillaPlusMode", "heavyArmorChestBonus");
-        heavyArmorBonus = ini.GetLongValue("VanillaPlusMode", "lightArmorBonus");
-        heavyArmorChestBonus = ini.GetLongValue("VanillaPlusMode", "lightArmorChestBonus");
+        lightArmorBonus = ini.GetLongValue("VanillaPlusMode", "lightArmorBonus");
+        lightArmorChestBonus = ini.GetLongValue("VanillaPlusMode", "lightArmorChestBonus");
         oneHandedBonus = ini.GetLongValue("VanillaPlusMode", "oneHandedBonus");
         twoHandedBonus = ini.GetLongValue("VanillaPlusMode", "twoHandedBonus");
         bowBonus = ini.GetLongValue("VanillaPlusMode", "bowBonus");
